@@ -4,6 +4,7 @@ import aiohttp
 import asyncio
 import threading
 import random
+import datetime
 
 from typing import Any, Union
 
@@ -14,15 +15,16 @@ from bless import (  # type: ignore
     GATTAttributePermissions,
 )
 
-from secrets import HA_AUTH, HA_ENDPOINT
-
+#from secrets import HA_AUTH, HA_ENDPOINT
+HA_AUTH=""
+HA_ENDPOINT=""
 SERVER_NAME = "SPServer"  # must be shorter than 10 characters
-SERVICE_UUID = "D2EA587F-19C8-4F4C-8179-3BA0BC150B01"
+SERVICE_UUID = "4a38ff83-3e18-4f35-a51b-90829dc07ed0"
 CHARACTERISTICS = [
-    "0DF8D897-33FE-4AF4-9E7A-63D24664C94C",
-    "0DF8D897-33FE-4AF4-9E7A-63D24664C94D",
-    "0DF8D897-33FE-4AF4-9E7A-63D24664C94E",
-    "0DF8D897-33FE-4AF4-9E7A-63D24664C94F",
+    "048df6ac-7c4c-4383-897e-760bae10e321",
+    "0a555305-d8f6-433b-8833-67b4d1f38630",
+    "1dff0906-83c3-46ad-8da3-b999eba26e9b",
+    "dd511cd7-51b8-472b-aff7-183bc6cbfdf1",
 ]
 
 logging.basicConfig(level=logging.DEBUG)
@@ -37,8 +39,17 @@ else:
 
 
 def read_request(characteristic: BlessGATTCharacteristic, **kwargs) -> bytearray:
-    logger.debug(f"Reading {characteristic.value}")
-    return characteristic.value
+    test=str(characteristic.value)
+    logger.debug(f"Reading {test}")
+    return bytearray(str.encode(test))
+
+def write_request(characteristic: BlessGATTCharacteristic, value: Any, **kwargs):
+    characteristic.value = value
+    logger.debug(f"Char value set to {characteristic.value}")
+    if characteristic.value == b"\x0f":
+        logger.debug("NICE")
+        trigger.set()
+
 
 
 async def get_ha_data():
@@ -57,11 +68,12 @@ async def run(loop):
     # Instantiate the server
     server = BlessServer(name=SERVER_NAME, loop=loop)
     server.read_request_func = read_request
+    server.write_request_func = write_request
 
     await server.add_new_service(SERVICE_UUID)
 
-    char_flags = GATTCharacteristicProperties.read | GATTCharacteristicProperties.notify
-    permissions = GATTAttributePermissions.readable
+    char_flags = GATTCharacteristicProperties.read | GATTCharacteristicProperties.write  #| GATTCharacteristicProperties.notify
+    permissions = GATTAttributePermissions.readable | GATTAttributePermissions.writeable
 
     for uuid in CHARACTERISTICS:
         await server.add_new_characteristic(
@@ -73,12 +85,11 @@ async def run(loop):
 
     while True and not trigger.is_set():
         logger.debug("Updating HA data")
-        data = (await get_ha_data()).encode("utf-8")
+        data = datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")#(await get_ha_data()).encode("utf-8")
         split_val = 240
         values = [data[i : i + split_val] for i in range(0, len(data), split_val)]
         for i, val in enumerate(values):
             server.get_characteristic(CHARACTERISTICS[i]).value = val
-        logger.debug("Updated HA data")
         await asyncio.sleep(60)
 
     await server.stop()
