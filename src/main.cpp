@@ -44,7 +44,7 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason);
 void initDisplay();
 void startScan();
 void hibernateDisplay();
-void writeDisplayData(char text[]);
+void writeDisplayData(char *tokens[]);
 float getBatteryVoltage();
 
 int serial_enabled = 0;
@@ -167,10 +167,10 @@ void loop()
 
         size_t bytes_received = characteristic1.read(current_pos, CHARACTERISTIC_MAX_DATA_LEN);
         current_pos += bytes_received;
-        //bytes_received = characteristic2.read(current_pos, CHARACTERISTIC_MAX_DATA_LEN);
-        //current_pos += bytes_received;
-        //bytes_received = characteristic3.read(current_pos, CHARACTERISTIC_MAX_DATA_LEN);
-        //current_pos += bytes_received;
+        // bytes_received = characteristic2.read(current_pos, CHARACTERISTIC_MAX_DATA_LEN);
+        // current_pos += bytes_received;
+        // bytes_received = characteristic3.read(current_pos, CHARACTERISTIC_MAX_DATA_LEN);
+        // current_pos += bytes_received;
         /*bytes_received = characteristic4.read(current_pos, CHARACTERISTIC_MAX_DATA_LEN);
         current_pos += bytes_received;*/
         memset(current_pos, 0, buffer + sizeof(buffer) - current_pos);
@@ -181,19 +181,25 @@ void loop()
         char *tokens[DATA_TOKENS]; // Array to store token pointers
         char *token;
         int index = 0;
-    
+
         // Use strtok to split the string
         token = strtok(buffer, ",");
-        while (token != NULL && index < DATA_TOKENS) {
-            tokens[index] = token;  // Store pointer to token
+        while (token != NULL && index < DATA_TOKENS)
+        {
+            tokens[index] = token; // Store pointer to token
             index++;
             token = strtok(NULL, ",");
         }
+        for (int i = 0; i < index; i++)
+        {
+            writeSerial(tokens[i]); // Correct way to access each token
+        }
 
-
+        writeDisplayData(tokens);
+        /*
         if(token[0] == '1') {
             writeDisplayData(tokens);
-        }
+        }*/
         refresh_count++;
         delay(TIME_REFRESH);
         startScan();
@@ -271,23 +277,25 @@ void disconnect_callback(uint16_t conn_handle, uint8_t reason)
     writeSerial("Disconnected");
 }
 
-void writeDisplayData(char *tokens[DATA_TOKENS])
+void writeDisplayData(char *tokens[])
 {
     float batteryVoltage = getBatteryVoltage();
-    char c[50]; //size of the number
+    char c[50]; // size of the number
     snprintf(c, 50, "%f", batteryVoltage);
-    EPD_HW_Init_GUI();                                       // GUI initialization.
-    Paint_Clear(WHITE);                                      // Clear canvas.
-    //Draw Todays Date
-    Paint_DrawString_EN(0, 45, "Date: ", &Font20, WHITE, BLACK); 
-    Paint_DrawString_EN(80, 45, tokens[1], &Font20, WHITE, BLACK);
-    //Draw outdoor temp
-    Paint_DrawString_EN(0, 90, "Temp Ute: ", &Font12, WHITE, BLACK); 
-    Paint_DrawString_EN(100, 90, tokens[1], &Font12, WHITE, BLACK);
-    //Draw Battery
-    Paint_DrawString_EN(0, 250, "Batt: ", &Font12, WHITE, BLACK); 
-    Paint_DrawString_EN(40,250, c, &Font12, WHITE, BLACK);
-    EPD_Display(BlackImage);                                 // Display GUI image.
+    EPD_HW_Init_GUI();  // GUI initialization.
+    Paint_Clear(WHITE); // Clear canvas.
+    // Draw Todays Date
+    // Paint_DrawString_EN(0, 45, "Date: ", &Font20, WHITE, BLACK);
+    Paint_DrawString_EN(5, 5, tokens[1], &Font20, WHITE, BLACK);
+    //Draw line
+    Paint_DrawLine(5, 30, 200, 30, BLACK, LINE_STYLE_SOLID, DOT_PIXEL_1X1);
+    // Draw outdoor temp
+    Paint_DrawString_EN(5, 45, "Temp Ute: ", &Font16, WHITE, BLACK);
+    Paint_DrawString_EN(100, 45, tokens[2], &Font16, WHITE, BLACK);
+    // Draw Battery
+    Paint_DrawString_EN(5, 280, "Batt: ", &Font12, WHITE, BLACK);
+    Paint_DrawString_EN(45, 280, c, &Font12, WHITE, BLACK);
+    EPD_Display(BlackImage); // Display GUI image.
     EPD_DeepSleep();
 }
 
