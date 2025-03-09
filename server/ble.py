@@ -85,7 +85,7 @@ async def run(loop):
 
     while True and not trigger.is_set():
         logger.debug("Updating HA data")
-        data = "1," + datetime.datetime.now().strftime("%B %d %Y",)+"," + round(random.uniform(-5, 25), 1)#(await get_ha_data()).encode("utf-8")
+        data = "1," + datetime.datetime.now().strftime("%B %d %Y",)+"," + str(round(random.uniform(-5, 25), 1))#(await get_ha_data()).encode("utf-8")
         split_val = 240
         values = [data[i : i + split_val] for i in range(0, len(data), split_val)]
         for i, val in enumerate(values):
