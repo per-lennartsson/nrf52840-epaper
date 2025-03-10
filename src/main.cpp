@@ -288,10 +288,10 @@ void writeDisplayData(char *tokens[])
     // Paint_DrawString_EN(0, 45, "Date: ", &Font20, WHITE, BLACK);
     Paint_DrawString_EN(5, 5, tokens[1], &Font20, WHITE, BLACK);
     //Draw line
-    Paint_DrawLine(5, 30, 200, 30, BLACK, LINE_STYLE_SOLID, DOT_PIXEL_1X1);
+    Paint_DrawLine(5, 30, 200, 30, BLACK, LINE_STYLE_SOLID, DOT_PIXEL_2X2);
     // Draw outdoor temp
     Paint_DrawString_EN(5, 45, "Temp Ute: ", &Font16, WHITE, BLACK);
-    Paint_DrawString_EN(100, 45, tokens[2], &Font16, WHITE, BLACK);
+    Paint_DrawString_EN(110, 45, tokens[2], &Font16, WHITE, BLACK);
     // Draw Battery
     Paint_DrawString_EN(5, 280, "Batt: ", &Font12, WHITE, BLACK);
     Paint_DrawString_EN(45, 280, c, &Font12, WHITE, BLACK);
