@@ -15,9 +15,9 @@ from bless import (  # type: ignore
     GATTAttributePermissions,
 )
 
-#from secrets import HA_AUTH, HA_ENDPOINT
-HA_AUTH=""
-HA_ENDPOINT=""
+from secrets import HA_AUTH, HA_ENDPOINT
+#HA_AUTH=""
+#HA_ENDPOINT=""
 SERVER_NAME = "SPServer"  # must be shorter than 10 characters
 SERVICE_UUID = "4a38ff83-3e18-4f35-a51b-90829dc07ed0"
 CHARACTERISTICS = [
@@ -59,7 +59,7 @@ async def get_ha_data():
     }
     async with aiohttp.ClientSession() as session:
         async with session.get(HA_ENDPOINT, headers=headers) as response:
-            return await response.text()
+            return await response.json()
 
 server = None
 async def run(loop):
@@ -85,10 +85,12 @@ async def run(loop):
 
     while True and not trigger.is_set():
         logger.debug("Updating HA data")
-        data = "1," + datetime.datetime.now().strftime("%B %d %Y",)+"," + str(round(random.uniform(-5, 25), 1))#(await get_ha_data()).encode("utf-8")
+        hdDataTemp = (await get_ha_data())['attributes']['temp-ute']
+        data = "1," + datetime.datetime.now().strftime("%B %d %Y",)+"," + str(hdDataTemp) + " C" 
         split_val = 240
         values = [data[i : i + split_val] for i in range(0, len(data), split_val)]
         for i, val in enumerate(values):
+            logger.debug(val)
             server.get_characteristic(CHARACTERISTICS[i]).value = val
         await asyncio.sleep(60)
 
